@@ -1,3 +1,5 @@
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Scanner;
 
 public class TubesStrukdat {
@@ -13,17 +15,27 @@ public class TubesStrukdat {
         String password;
         String role;
         int poin;
+        int nominal; // nambah nominal
         int[] uang = new int[5];
         int[] kupon = new int[5];
         int[] shoppingCart = new int[20];
+        LinkedList<hsus> hst = new LinkedList<>();
+    }
+
+    static class hsus{
+        String[] ifo;
+        int ttl;
+        public hsus(String[] io, int tl) {
+            this.ifo = io;
+            this.ttl = tl;
+        }
     }
 
     static class tempatkios {
         String alamat; // untuk ditunjukan di reciept nanti
         int revenue;
         static itemlist[] item = new itemlist[20];
-        reviewNode head = null;
-        reviewNode tail = null;
+        LinkedList<reviewNode> daftarReview = new LinkedList<>();
     }
 
     static class itemlist {
@@ -37,10 +49,13 @@ public class TubesStrukdat {
     }
 
     static class reviewNode {
-        String info;
+        String[] info;
         int bintang;
-        reviewNode next;
-        reviewNode prev;
+
+        public reviewNode(String[] info, int bintang) {
+            this.info = info;
+            this.bintang = bintang;
+        }
     }
 
     static user[] U = new user[100];
@@ -50,6 +65,7 @@ public class TubesStrukdat {
         for (int i = 0; i < 100; i++) {
             U[i] = new user();
             U[i].poin = 0;
+            U[i].nominal = 100000;
         }
 
         for (int i = 0; i < 5; i++) {
@@ -204,21 +220,28 @@ public class TubesStrukdat {
             for (int i = 0; i < 5; i++) {
                 System.out.println("--- Review untuk Kios: " + kios[i].alamat + " ---");
 
-                reviewNode current = kios[i].head;
-                if (current == null) {
+                Iterator<reviewNode> it = kios[i].daftarReview.iterator();
+                if (!it.hasNext()) {
                     System.out.println("Belum ada review di kios ini.");
                 } else {
-                    while (current != null) {
-                        System.out.println("Bintang: " + current.bintang + " | Review: " + current.info);
-                        current = current.next;
+                    while (it.hasNext()) {
+                        reviewNode current = it.next();
+                        System.out.println("Bintang: " + current.bintang + " | Review: "
+                                + java.util.Arrays.toString(current.info));
                     }
                 }
             }
         } else {
-            reviewNode current = kios[pilihan - 1].head;
-            while (current != null) {
-                System.out.println("Bintang: " + current.bintang + " | Review: " + current.info);
-                current = current.next;
+            int idx = pilihan - 1;
+            Iterator<reviewNode> it = kios[idx].daftarReview.iterator();
+            if (!it.hasNext()) {
+                System.out.println("Belum ada review di kios ini.");
+            } else {
+                while (it.hasNext()) {
+                    reviewNode current = it.next();
+                    System.out.println(
+                            "Bintang: " + current.bintang + " | Review: " + java.util.Arrays.toString(current.info));
+                }
             }
         }
         MenuA();
@@ -369,15 +392,15 @@ public class TubesStrukdat {
                     int j = 0;
                     while (cekipt && j < 20) {
                         System.out.print("Masukkan menu: ");
-                        int x = sc.nextInt();
-                        if (x > (in + 1) || x < 1) {
+                        int x = sc.nextInt() - 1;
+                        if (x > (in + 1) || x <= -1) {
                             System.out.println("Menu tidak tersedia");
                         } else {
-                            U[indikator].shoppingCart[in]++;
+                            U[indikator].shoppingCart[x]++;
                             System.out.println("Tambah menu (Y/N)");
                             char cek = sc.next().charAt(0);
 
-                            if (cek == 'Y') {
+                            if (Character.toUpperCase(cek) == 'Y') {
                                 cekipt = true;
                             } else {
                                 cekipt = false;
@@ -386,7 +409,40 @@ public class TubesStrukdat {
 
                     }
 
-                    belanja(); // ini kurang tau mau apa terserah mau diuabh juga gapapa
+                    int[] penambl = belanja(pilihkios); // Total per Item
+                    int total = total(penambl); // total akhir
+                    String[] multitxt = new String[20];
+                    for (int ic = 0; ic < 20; ic++) {
+                        if (U[indikator].shoppingCart[ic] != 0) {
+                            String txt = "Menu " + (ic + 1) + " " + kios[pilihkios].item[ic].nama + "  Jumlah: "
+                                    + U[indikator].shoppingCart[ic] + " Total: " + penambl[ic];
+                            multitxt[ic] = txt;
+                        }
+                    }
+                    System.out.println("Total akhir: " + total);
+                    int temper = bayar(total); // cek saldo user
+                    if (temper == -1) {
+                        System.out.println("Maaf Saldo Tidak Mencukupi");
+                    } else {
+                        System.out.println("=== Receipt ===");
+                        for (int jk = 0; jk < 20; jk++) {
+                            if (multitxt[jk] != null)
+                                System.out.println(multitxt[jk]);
+                        }
+                        System.out.println("Pembayaran Berhasi, sisa saldo: " + U[indikator].nominal);
+
+                        // Rating
+                        System.out.print("Masukkan Rating: ");
+                        int rt = sc.nextInt();
+                        kios[pilihkios].daftarReview.add(new reviewNode(multitxt, rt)); //Kirim ke Toko, Menu yang dibeli + rating transaksi
+
+                        //Masuk ke History
+
+                        U[indikator].hst.add(new hsus(multitxt, total));
+
+                        // Masukkan revenue ke kios
+                        kios[pilihkios].revenue = kios[pilihkios].revenue + total;
+                    }
                     break;
 
                 case 2:
@@ -418,12 +474,36 @@ public class TubesStrukdat {
     }
 
     static int[] belanja(int kd) {
-        int ck = 0;
+        int[] tempatsementara = new int[20];
 
-        while (U[indikator].shoppingCart[ck] != null){
-            U[indikator].shoppingCart[ck] = U[indikator].shoppingCart[ck] * kios[kd].item[kd].harga;
+        for (int i = 0; i < 20; i++) {
+            tempatsementara[i] = 0;
         }
-        return U[indikator].shoppingCart;
+        for (int ct = 0; ct < 20; ct++) {
+            if (U[indikator].shoppingCart[ct] != 0) {
+                tempatsementara[ct] = U[indikator].shoppingCart[ct] * kios[kd].item[ct].harga;
+            }
+        }
+        return tempatsementara;
+    }
+
+    static int total(int[] cb) {
+        int total = 0;
+        for (int i = 0; i < 20; i++) {
+            if (cb[i] != 0) {
+                total = total + cb[i];
+            }
+        }
+        return total;
+    }
+
+    static int bayar(int nm) {
+        if (U[indikator].nominal < nm) {
+            return -1;
+        } else {
+            U[indikator].nominal = U[indikator].nominal - nm;
+            return U[indikator].nominal;
+        }
     }
 
     static void historyTransaksi() {
