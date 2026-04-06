@@ -455,7 +455,7 @@ public class TubesStrukdat {
                     break;
 
                 case 4:
-                    topUp(); // ini juga sama kalau mau diganti juga gak apa apa
+                    topUp();
                     break;
 
                 case 5:
@@ -511,7 +511,74 @@ public class TubesStrukdat {
     }
 
     static void topUp() {
+        System.out.println("\n=== Top Up Menu ===");
+        System.out.println("Pilih Bank: ");
+        System.out.println("1. BCA");
+        System.out.println("2. Mandiri");
+        System.out.println("3. BNI");
+        System.out.print("Pilih (1-3): ");
+        int pilihBank = sc.nextInt();
 
+        String kodeBank = "";
+        if (pilihBank == 1) {
+            kodeBank = "8001";
+        } else if (pilihBank == 2) {
+            kodeBank = "9002";
+        } else {
+            kodeBank = "7003";
+        }
+
+        System.out.println("\n=== Top Up Menu ===");
+        System.out.println("Saldo anda saat ini: Rp" + U[indikator].nominal);
+        System.out.println("1. Rp10.000");
+        System.out.println("2. Rp50.000");
+        System.out.println("3. Rp100.000");
+        System.out.println("4. Input Manual");
+        System.out.print("Silahkan Pilih (1 - 4) : ");
+        int pilih = sc.nextInt();
+        int tambah = 0;
+        switch (pilih) {
+            case 1:
+                tambah = 10000;
+                break;
+            case 2:
+                tambah = 50000;
+                break;
+            case 3:
+                tambah = 100000;
+                break;
+            case 4:
+                System.out.println("\nMasukan Nominal: Rp");
+                tambah = sc.nextInt();
+                break;
+
+            default:
+                System.out.println("Pilihan tidak tersedia");
+                topUp();
+                return;
+        }
+        int acak1 = (int) (Math.random() * 9000) + 1000;
+        int acak2 = (int) (Math.random() * 9000) + 1000;
+        String virtualAccount = kodeBank + acak1 + acak2;
+
+        System.out.println("\nNomor Virtual Account Anda: " + virtualAccount);
+        try {
+            System.out.print("Memproses");
+            for (int i = 0; i < 3; i++) {
+                Thread.sleep(1000);
+                System.out.print(".");
+            }
+            System.out.println();
+        } catch (Exception e) {
+        }
+
+        U[indikator].nominal += tambah;
+
+        System.out.println("\nPEMBAYARAN BERHASIL!");
+        System.out.println("Saldo bertambah: Rp" + tambah);
+        System.out.println("Total Saldo " + U[indikator].nama + ": Rp" + U[indikator].nominal);
+
+        MenuP();
     }
 
     // =========================================================//
